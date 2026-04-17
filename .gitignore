@@ -1,0 +1,49 @@
+# --- Secrets & key material ---
+# Private keys of any kind
+*.key
+*.pem
+*.p12
+*.pfx
+# SSH keys (public included — we never commit key material, even public)
+id_*
+*.pub
+# PKI/CA material and client bundles produced on the Pi
+ca.crt
+ca.key
+server.crt
+server.key
+client.crt
+client.key
+*-client-bundle.tar.gz
+
+# --- Talos cluster secrets & generated configs ---
+# Outputs of `talosctl gen config` contain cluster secrets
+secrets.yaml
+talosconfig
+controlplane.yaml
+worker.yaml
+# (Keep placeholder YAMLs under a dedicated path; real ones live outside the repo.)
+
+# --- Rendered / local-only config ---
+*.local
+*.local.*
+.env
+.env.*
+
+# --- Editor / OS junk ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# --- Terraform (if added later) ---
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
