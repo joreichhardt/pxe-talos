@@ -30,6 +30,8 @@ render_tmpl() {
 
 mkdir -p build
 
+render_tmpl cloud-init/network-config.tmpl build/network-config
+
 # Subsequent tasks append render steps here.
 
 echo "render.sh: done"

@@ -1,0 +1,12 @@
+version: 2
+ethernets:
+  ${UPLINK_IFACE}:
+    dhcp4: true
+    dhcp6: false
+vlans:
+  ${LAB_IFACE}:
+    id: ${LAB_VLAN_ID}
+    link: ${UPLINK_IFACE}
+    addresses: [${PI_LAB_CIDR}]
+    dhcp4: false
+    dhcp6: false

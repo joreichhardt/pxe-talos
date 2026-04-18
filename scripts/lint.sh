@@ -19,6 +19,8 @@ check() {
 
 check "shellcheck" bash -c 'find scripts cloud-init/parts/scripts -type f -name "*.sh" 2>/dev/null | xargs --no-run-if-empty shellcheck'
 
+check "yamllint network-config" bash -c '[ -f build/network-config ] && yamllint -d "{rules: {line-length: disable, document-start: disable}}" build/network-config'
+
 # Subsequent tasks append checks here.
 
 if [[ $FAIL -ne 0 ]]; then
