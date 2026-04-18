@@ -1,7 +1,4 @@
-# PXE Server for Talos Linux via cloud-init on Raspberry Pi
-
-**Date:** 2026-04-17
-**Status:** Approved for implementation planning
+# Design
 
 ## Goal
 
