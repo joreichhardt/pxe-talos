@@ -25,6 +25,25 @@ check "cloud-init schema" bash -c '[ -f build/user-data ] && cloud-init schema -
 
 check "dnsmasq --test" bash -c '[ -f build/parts/dnsmasq/pxe.conf ] && dnsmasq --test -C build/parts/dnsmasq/pxe.conf'
 
+# systemd-analyze verify fails when ExecStart paths don't exist on the
+# workstation. Those paths only exist on the target Pi, so we filter the
+# known "not executable" lines and fail only on other errors.
+verify_unit() {
+    local unit="$1"
+    local out
+    out="$(systemd-analyze verify --man=no "$unit" 2>&1 || true)"
+    local filtered
+    filtered="$(printf '%s\n' "$out" | grep -v 'is not executable: No such file or directory' | grep -v '^$' || true)"
+    if [[ -n "$filtered" ]]; then
+        printf '%s\n' "$filtered"
+        return 1
+    fi
+    return 0
+}
+
+check "systemd-analyze matchbox"    verify_unit cloud-init/parts/systemd/matchbox.service
+check "systemd-analyze talos-assets" verify_unit cloud-init/parts/systemd/talos-assets.service
+
 # Subsequent tasks append checks here.
 
 if [[ $FAIL -ne 0 ]]; then

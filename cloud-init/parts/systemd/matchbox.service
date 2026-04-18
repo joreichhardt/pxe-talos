@@ -1,0 +1,23 @@
+[Unit]
+Description=Matchbox
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=matchbox
+Group=matchbox
+ExecStart=/usr/local/bin/matchbox \
+    -address=0.0.0.0:8080 \
+    -rpc-address=0.0.0.0:8081 \
+    -data-path=/var/lib/matchbox \
+    -assets-path=/var/lib/matchbox/assets \
+    -cert-file=/etc/matchbox/server.crt \
+    -key-file=/etc/matchbox/server.key \
+    -ca-file=/etc/matchbox/ca.crt \
+    -log-level=info
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+[Unit]
+Description=Fetch Talos assets on first boot (idempotent)
+After=network-online.target matchbox.service
+Wants=network-online.target
+ConditionPathExists=!/var/lib/matchbox/assets/.talos-fetched
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/pxe-fetch-talos.sh
+
+[Install]
+WantedBy=multi-user.target
