@@ -1,0 +1,29 @@
+#cloud-config
+hostname: ${HOSTNAME}
+preserve_hostname: false
+locale: en_US.UTF-8
+timezone: ${TIMEZONE}
+
+users:
+  - name: ubuntu
+    gecos: Default User
+    groups: [adm, sudo]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ${SSH_PUBKEY_CONTENT}
+
+package_update: true
+package_upgrade: false
+packages:
+  - dnsmasq
+  - curl
+  - jq
+  - xz-utils
+  - openssl
+  - ca-certificates
+  - iptables-persistent
+  - netfilter-persistent
+
+# write_files and runcmd are appended by scripts/render.sh

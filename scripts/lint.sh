@@ -21,6 +21,8 @@ check "shellcheck" bash -c 'find scripts cloud-init/parts/scripts -type f -name 
 
 check "yamllint network-config" bash -c '[ -f build/network-config ] && yamllint -d "{rules: {line-length: disable, document-start: disable}}" build/network-config'
 
+check "cloud-init schema" bash -c '[ -f build/user-data ] && cloud-init schema --config-file build/user-data'
+
 # Subsequent tasks append checks here.
 
 if [[ $FAIL -ne 0 ]]; then

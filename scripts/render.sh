@@ -31,6 +31,7 @@ render_tmpl() {
 mkdir -p build
 
 render_tmpl cloud-init/network-config.tmpl build/network-config
+render_tmpl cloud-init/user-data.tmpl build/user-data
 
 # Subsequent tasks append render steps here.
 
