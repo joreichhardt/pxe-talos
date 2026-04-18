@@ -1,0 +1,14 @@
+{
+  "id": "talos-controlplane",
+  "name": "Talos Controlplane (amd64)",
+  "boot": {
+    "kernel": "/assets/talos/__SCHEMATIC__/__VERSION__/vmlinuz-amd64",
+    "initrd": ["/assets/talos/__SCHEMATIC__/__VERSION__/initramfs-amd64.xz"],
+    "args": [
+      "talos.platform=metal",
+      "talos.config=http://${PI_LAB_IP}:8080/assets/configs/controlplane.yaml",
+      "console=tty0",
+      "console=ttyS0"
+    ]
+  }
+}

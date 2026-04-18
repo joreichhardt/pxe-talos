@@ -40,6 +40,15 @@ for dns in ${UPSTREAM_DNS_LIST}; do
 done
 echo "cache-size=1000" >> build/parts/dnsmasq/pxe.conf
 
+mkdir -p build/parts/matchbox/profiles build/parts/matchbox/groups build/parts/matchbox/assets/configs
+render_tmpl cloud-init/parts/matchbox/profiles/talos-controlplane.json.tmpl build/parts/matchbox/profiles/talos-controlplane.json
+render_tmpl cloud-init/parts/matchbox/profiles/talos-worker.json.tmpl      build/parts/matchbox/profiles/talos-worker.json
+cp cloud-init/parts/matchbox/groups/controlplane.json         build/parts/matchbox/groups/
+cp cloud-init/parts/matchbox/groups/worker.json               build/parts/matchbox/groups/
+cp cloud-init/parts/matchbox/assets/configs/controlplane.yaml build/parts/matchbox/assets/configs/
+cp cloud-init/parts/matchbox/assets/configs/worker.yaml       build/parts/matchbox/assets/configs/
+render_tmpl cloud-init/parts/matchbox/assets/menu.ipxe.tmpl   build/parts/matchbox/assets/menu.ipxe
+
 # Subsequent tasks append render steps here.
 
 echo "render.sh: done"

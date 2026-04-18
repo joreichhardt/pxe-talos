@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016  # single-quoted bash -c payloads are deliberate throughout this script
 # Validate every artefact. Fails on the first error.
 set -euo pipefail
 
@@ -43,6 +44,10 @@ verify_unit() {
 
 check "systemd-analyze matchbox"    verify_unit cloud-init/parts/systemd/matchbox.service
 check "systemd-analyze talos-assets" verify_unit cloud-init/parts/systemd/talos-assets.service
+
+check "jq matchbox json" bash -c 'for f in build/parts/matchbox/profiles/*.json build/parts/matchbox/groups/*.json; do jq empty "$f" || exit 1; done'
+check "yamllint placeholder configs" bash -c 'yamllint -d "{rules: {line-length: disable, document-start: disable, truthy: disable}}" build/parts/matchbox/assets/configs/controlplane.yaml build/parts/matchbox/assets/configs/worker.yaml'
+check "ipxe var preserved" bash -c 'grep -q "\${mac:hexhyp}" build/parts/matchbox/assets/menu.ipxe'
 
 # Subsequent tasks append checks here.
 

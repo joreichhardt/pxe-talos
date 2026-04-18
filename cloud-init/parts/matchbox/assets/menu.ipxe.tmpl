@@ -1,0 +1,22 @@
+#!ipxe
+:start
+menu Talos PXE - pick a role
+item --gap -- Talos Linux
+item cp     Talos Controlplane
+item worker Talos Worker
+item --gap -- Other
+item local  Boot from local disk
+item reboot Reboot
+choose --default cp --timeout 10000 target && goto ${target}
+
+:cp
+chain http://${PI_LAB_IP}:8080/boot.ipxe?role=controlplane&mac=${mac:hexhyp}
+
+:worker
+chain http://${PI_LAB_IP}:8080/boot.ipxe?role=worker&mac=${mac:hexhyp}
+
+:local
+exit
+
+:reboot
+reboot
