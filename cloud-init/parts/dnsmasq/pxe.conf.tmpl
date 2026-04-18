@@ -1,0 +1,21 @@
+# Bind only to the PXE VLAN.
+interface=${LAB_IFACE}
+bind-interfaces
+dhcp-authoritative
+except-interface=${UPLINK_IFACE}
+
+dhcp-range=${DHCP_START},${DHCP_END},${DHCP_LEASE}
+dhcp-option=option:router,${PI_LAB_IP}
+dhcp-option=option:dns-server,${PI_LAB_IP}
+domain=${LAB_DOMAIN}
+dhcp-fqdn
+
+dhcp-match=set:efi-x86_64,option:client-arch,7
+dhcp-match=set:ipxe,175
+dhcp-userclass=set:ipxe,iPXE
+
+dhcp-boot=tag:efi-x86_64,tag:!ipxe,ipxe.efi
+dhcp-boot=tag:ipxe,http://${PI_LAB_IP}:8080/assets/menu.ipxe
+
+enable-tftp
+tftp-root=/srv/tftp

@@ -23,6 +23,8 @@ check "yamllint network-config" bash -c '[ -f build/network-config ] && yamllint
 
 check "cloud-init schema" bash -c '[ -f build/user-data ] && cloud-init schema --config-file build/user-data'
 
+check "dnsmasq --test" bash -c '[ -f build/parts/dnsmasq/pxe.conf ] && dnsmasq --test -C build/parts/dnsmasq/pxe.conf'
+
 # Subsequent tasks append checks here.
 
 if [[ $FAIL -ne 0 ]]; then

@@ -33,6 +33,13 @@ mkdir -p build
 render_tmpl cloud-init/network-config.tmpl build/network-config
 render_tmpl cloud-init/user-data.tmpl build/user-data
 
+mkdir -p build/parts/dnsmasq
+render_tmpl cloud-init/parts/dnsmasq/pxe.conf.tmpl build/parts/dnsmasq/pxe.conf
+for dns in ${UPSTREAM_DNS_LIST}; do
+    echo "server=${dns}" >> build/parts/dnsmasq/pxe.conf
+done
+echo "cache-size=1000" >> build/parts/dnsmasq/pxe.conf
+
 # Subsequent tasks append render steps here.
 
 echo "render.sh: done"
