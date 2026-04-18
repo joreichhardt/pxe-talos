@@ -13,7 +13,19 @@ cd "$ROOT"
 
 CACHE="build/cache"
 OUT="build/pxe-talos.img"
-UBUNTU_URL="https://cdimage.ubuntu.com/releases/24.04/release/ubuntu-24.04-preinstalled-server-arm64+raspi.img.xz"
+
+# Canonical publishes point-versioned filenames under /releases/24.04/release/
+# (e.g. ubuntu-24.04.4-preinstalled-server-arm64+raspi.img.xz). Pick the
+# highest-versioned server image by default; allow UBUNTU_URL override.
+UBUNTU_URL="${UBUNTU_URL:-}"
+if [[ -z "$UBUNTU_URL" ]]; then
+    UBUNTU_INDEX="https://cdimage.ubuntu.com/releases/24.04/release/"
+    UBUNTU_FILE="$(curl -fsSL "$UBUNTU_INDEX" \
+        | grep -oE 'ubuntu-24\.04\.[0-9]+-preinstalled-server-arm64\+raspi\.img\.xz' \
+        | sort -V | tail -1)"
+    [[ -n "$UBUNTU_FILE" ]] || { echo "cannot find Ubuntu Pi image at $UBUNTU_INDEX" >&2; exit 1; }
+    UBUNTU_URL="${UBUNTU_INDEX}${UBUNTU_FILE}"
+fi
 UBUNTU_XZ="$CACHE/$(basename "$UBUNTU_URL")"
 UBUNTU_IMG="${UBUNTU_XZ%.xz}"
 
