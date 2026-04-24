@@ -22,6 +22,13 @@ export SSH_PUBKEY_CONTENT HOSTNAME TIMEZONE UPLINK_IFACE LAB_VLAN_ID LAB_IFACE \
        PI_LAB_IP PI_LAB_CIDR LAB_SUBNET DHCP_START DHCP_END DHCP_LEASE \
        LAB_DOMAIN UPSTREAM_DNS_LIST MATCHBOX_VERSION
 
+TALOS_CONFIG_SOURCE=""
+if [[ -n "${TALOS_CONFIG_DIR:-}" ]]; then
+    TALOS_CONFIG_SOURCE="${TALOS_CONFIG_DIR/#\~/$HOME}"
+elif [[ -d cloud-init/parts/matchbox/assets/configs.local ]]; then
+    TALOS_CONFIG_SOURCE="cloud-init/parts/matchbox/assets/configs.local"
+fi
+
 render_tmpl() {
     local in="$1" out="$2"
     # shellcheck disable=SC2016  # single quotes are deliberate: envsubst reads the allowlist literally
@@ -40,13 +47,30 @@ for dns in ${UPSTREAM_DNS_LIST}; do
 done
 echo "cache-size=1000" >> build/parts/dnsmasq/pxe.conf
 
+mkdir -p build/parts/tftp
+render_tmpl cloud-init/parts/tftp/autoexec.ipxe.tmpl build/parts/tftp/autoexec.ipxe
+
 mkdir -p build/parts/matchbox/profiles build/parts/matchbox/groups build/parts/matchbox/assets/configs
 render_tmpl cloud-init/parts/matchbox/profiles/talos-controlplane.json.tmpl build/parts/matchbox/profiles/talos-controlplane.json
 render_tmpl cloud-init/parts/matchbox/profiles/talos-worker.json.tmpl      build/parts/matchbox/profiles/talos-worker.json
+render_tmpl cloud-init/parts/matchbox/profiles/talos-manual.json.tmpl      build/parts/matchbox/profiles/talos-manual.json
 cp cloud-init/parts/matchbox/groups/controlplane.json         build/parts/matchbox/groups/
 cp cloud-init/parts/matchbox/groups/worker.json               build/parts/matchbox/groups/
-cp cloud-init/parts/matchbox/assets/configs/controlplane.yaml build/parts/matchbox/assets/configs/
-cp cloud-init/parts/matchbox/assets/configs/worker.yaml       build/parts/matchbox/assets/configs/
+cp cloud-init/parts/matchbox/groups/manual.json               build/parts/matchbox/groups/
+if [[ -n "$TALOS_CONFIG_SOURCE" ]]; then
+    for cfg in controlplane.yaml worker.yaml; do
+        if [[ ! -f "$TALOS_CONFIG_SOURCE/$cfg" ]]; then
+            echo "error: $TALOS_CONFIG_SOURCE/$cfg not found" >&2
+            exit 1
+        fi
+        cp "$TALOS_CONFIG_SOURCE/$cfg" "build/parts/matchbox/assets/configs/$cfg"
+    done
+    echo "render.sh: using Talos configs from $TALOS_CONFIG_SOURCE"
+else
+    cp cloud-init/parts/matchbox/assets/configs/controlplane.yaml build/parts/matchbox/assets/configs/
+    cp cloud-init/parts/matchbox/assets/configs/worker.yaml       build/parts/matchbox/assets/configs/
+    echo "render.sh: warning: using placeholder Talos configs" >&2
+fi
 render_tmpl cloud-init/parts/matchbox/assets/menu.ipxe.tmpl   build/parts/matchbox/assets/menu.ipxe
 
 USER_DATA=build/user-data
@@ -63,6 +87,11 @@ emit_write_file() {
     } >> "$USER_DATA"
 }
 
+cat >> "$USER_DATA" <<EOF
+bootcmd:
+  - [ install, -d, /etc/dnsmasq.d, /etc/modules-load.d, /etc/pxe, /etc/sysctl.d, /etc/systemd/resolved.conf.d, /etc/systemd/system, /usr/local/sbin, /var/lib/matchbox/assets/configs, /var/lib/matchbox/groups, /var/lib/matchbox/profiles ]
+EOF
+
 echo "write_files:" >> "$USER_DATA"
 
 emit_write_file cloud-init/parts/resolved/disable-stub.conf   /etc/systemd/resolved.conf.d/disable-stub.conf 0644 root:root
@@ -75,6 +104,7 @@ emit_write_file cloud-init/parts/systemd/talos-assets.service /etc/systemd/syste
 
 emit_write_file cloud-init/parts/scripts/pxe-bootstrap-pki.sh /usr/local/sbin/pxe-bootstrap-pki.sh            0755 root:root
 emit_write_file cloud-init/parts/scripts/pxe-fetch-talos.sh   /usr/local/sbin/pxe-fetch-talos.sh              0755 root:root
+emit_write_file build/parts/tftp/autoexec.ipxe                /srv/tftp/autoexec.ipxe                         0644 root:root
 
 {
     echo "  - path: /etc/pxe/pki.env"
@@ -90,8 +120,10 @@ emit_write_file cloud-init/parts/scripts/pxe-fetch-talos.sh   /usr/local/sbin/px
 emit_write_file build/parts/matchbox/assets/menu.ipxe                 /var/lib/matchbox/assets/menu.ipxe                  0644 root:root
 emit_write_file build/parts/matchbox/profiles/talos-controlplane.json /var/lib/matchbox/profiles/talos-controlplane.json  0644 root:root
 emit_write_file build/parts/matchbox/profiles/talos-worker.json       /var/lib/matchbox/profiles/talos-worker.json        0644 root:root
+emit_write_file build/parts/matchbox/profiles/talos-manual.json       /var/lib/matchbox/profiles/talos-manual.json        0644 root:root
 emit_write_file build/parts/matchbox/groups/controlplane.json         /var/lib/matchbox/groups/controlplane.json          0644 root:root
 emit_write_file build/parts/matchbox/groups/worker.json               /var/lib/matchbox/groups/worker.json                0644 root:root
+emit_write_file build/parts/matchbox/groups/manual.json               /var/lib/matchbox/groups/manual.json                0644 root:root
 emit_write_file build/parts/matchbox/assets/configs/controlplane.yaml /var/lib/matchbox/assets/configs/controlplane.yaml  0644 root:root
 emit_write_file build/parts/matchbox/assets/configs/worker.yaml       /var/lib/matchbox/assets/configs/worker.yaml        0644 root:root
 
@@ -101,10 +133,10 @@ runcmd:
   - [ systemctl, restart, systemd-resolved ]
   - [ sysctl, --system ]
   - [ sh, -c, "getent passwd matchbox >/dev/null || useradd --system --home /var/lib/matchbox --shell /usr/sbin/nologin matchbox" ]
-  - [ install, -d, -o, matchbox, -g, matchbox, /var/lib/matchbox, /var/lib/matchbox/assets, /var/lib/matchbox/profiles, /var/lib/matchbox/groups, /etc/matchbox ]
+  - [ install, -d, -o, matchbox, -g, matchbox, /var/lib/matchbox, /var/lib/matchbox/assets, /var/lib/matchbox/assets/configs, /var/lib/matchbox/profiles, /var/lib/matchbox/groups, /etc/matchbox ]
   - [ install, -d, /srv/tftp ]
-  - [ sh, -c, "[ -f /srv/tftp/ipxe.efi ] || curl -fLo /srv/tftp/ipxe.efi http://boot.ipxe.org/ipxe.efi" ]
-  - [ sh, -c, "[ -f /srv/tftp/snponly.efi ] || curl -fLo /srv/tftp/snponly.efi http://boot.ipxe.org/snponly.efi" ]
+  - [ sh, -c, "[ -f /srv/tftp/ipxe.efi ] || curl -fLo /srv/tftp/ipxe.efi https://boot.ipxe.org/x86_64-efi/ipxe.efi" ]
+  - [ sh, -c, "[ -f /srv/tftp/snponly.efi ] || curl -fLo /srv/tftp/snponly.efi https://boot.ipxe.org/x86_64-efi/snponly.efi" ]
   - [ sh, -c, "[ -f /srv/tftp/undionly.kpxe ] || curl -fLo /srv/tftp/undionly.kpxe http://boot.ipxe.org/undionly.kpxe" ]
   - [ sh, -c, "[ -x /usr/local/bin/matchbox ] || ( cd /tmp && curl -fLo matchbox.tgz https://github.com/poseidon/matchbox/releases/download/${MATCHBOX_VERSION}/matchbox-${MATCHBOX_VERSION}-linux-arm64.tar.gz && tar xzf matchbox.tgz && install -m 0755 matchbox-${MATCHBOX_VERSION}-linux-arm64/matchbox /usr/local/bin/matchbox && rm -rf matchbox.tgz matchbox-${MATCHBOX_VERSION}-linux-arm64 )" ]
   - [ bash, /usr/local/sbin/pxe-bootstrap-pki.sh ]

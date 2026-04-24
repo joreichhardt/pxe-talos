@@ -1,0 +1,22 @@
+routeros_hosturl  = "http://192.168.188.192"
+routeros_username = "terraform"
+routeros_password = "Terraform2026#"
+routeros_insecure = true
+
+identity = "rb5009-pxe"
+
+uplink_port = "ether1"
+
+pi_trunk_ports = ["ether2"]
+
+lab_access_ports = [
+  "ether3",
+  "ether4",
+  "ether5",
+  "ether6",
+  "ether7",
+  "ether8",
+]
+
+home_access_ports      = []
+downstream_trunk_ports = []

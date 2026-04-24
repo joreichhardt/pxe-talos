@@ -52,3 +52,4 @@ crash.*.log
 build/*
 !build/.gitkeep
 cloud-init/vars.env.local
+cloud-init/parts/matchbox/assets/configs.local/

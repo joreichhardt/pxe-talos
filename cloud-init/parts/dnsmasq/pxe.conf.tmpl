@@ -14,7 +14,7 @@ dhcp-match=set:efi-x86_64,option:client-arch,7
 dhcp-match=set:ipxe,175
 dhcp-userclass=set:ipxe,iPXE
 
-dhcp-boot=tag:efi-x86_64,tag:!ipxe,ipxe.efi
+dhcp-boot=tag:efi-x86_64,tag:!ipxe,snponly.efi
 dhcp-boot=tag:ipxe,http://${PI_LAB_IP}:8080/assets/menu.ipxe
 
 enable-tftp

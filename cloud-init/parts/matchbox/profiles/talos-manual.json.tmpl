@@ -1,6 +1,6 @@
 {
-  "id": "talos-worker",
-  "name": "Talos Worker (amd64)",
+  "id": "talos-manual",
+  "name": "Talos Manual Install (amd64)",
   "boot": {
     "kernel": "/assets/talos/__SCHEMATIC__/__VERSION__/vmlinuz-amd64",
     "initrd": ["/assets/talos/__SCHEMATIC__/__VERSION__/initramfs-amd64.xz"],
@@ -8,7 +8,6 @@
       "talos.platform=metal",
       "slab_nomerge",
       "pti=on",
-      "talos.config=http://${PI_LAB_IP}:8080/assets/configs/worker.yaml",
       "console=tty0",
       "console=ttyS0"
     ]

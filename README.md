@@ -17,6 +17,18 @@ scripts/lint.sh
 
 `vars.env.local` is gitignored. Common overrides: `SSH_PUBKEY_PATH`, VLAN ID, subnet, upstream DNS.
 
+To embed real Talos machine configs into the Pi image, generate them before rendering and place them in the ignored local config directory:
+
+```bash
+mkdir -p cloud-init/parts/matchbox/assets/configs.local
+talosctl gen config pxe-talos https://<vip-or-first-cp-ip>:6443 \
+  --output-dir cloud-init/parts/matchbox/assets/configs.local
+scripts/render.sh
+scripts/lint.sh
+```
+
+`scripts/render.sh` will prefer `cloud-init/parts/matchbox/assets/configs.local/controlplane.yaml` and `worker.yaml` when present. You can alternatively set `TALOS_CONFIG_DIR=/path/to/talos-out` in `cloud-init/vars.env.local`.
+
 ## 2. Flash the Pi
 
 Two options:
@@ -50,9 +62,9 @@ The bundle contains `ca.crt`, `client.crt`, `client.key` for mTLS against the Ma
    talosctl gen config pxe-talos https://<vip-or-first-cp-ip>:6443
    ```
 
-   Replace `cloud-init/parts/matchbox/assets/configs/controlplane.yaml` and `.../worker.yaml` with the generated files (keep the filenames; they are served as-is by Matchbox). Rerun `scripts/render.sh` if you want to update the Pi's copies via cloud-init; on a running Pi, just `scp` them into `/var/lib/matchbox/assets/configs/`.
+   Put the generated `controlplane.yaml` and `worker.yaml` in `cloud-init/parts/matchbox/assets/configs.local/` before running `scripts/render.sh` or set `TALOS_CONFIG_DIR` in `cloud-init/vars.env.local`. These generated files contain cluster secrets and must stay out of git.
 
-2. PXE-boot a node on an access port of VLAN 10. iPXE menu appears — pick controlplane or worker. Talos boots, pulls the config, and goes into maintenance mode until you bootstrap.
+2. PXE-boot a node on an access port of VLAN 10. iPXE menu appears — pick controlplane, worker, or manual install. The manual option boots Talos without `talos.config`, like USB/ISO maintenance mode; connect with `talosctl --insecure --nodes <dhcp-ip>` and apply config manually.
 3. `talosctl bootstrap --nodes <cp-ip>` once the first controlplane is up.
 
 ## 5. Talos-internal VLAN
@@ -85,6 +97,7 @@ The talos-assets service re-resolves the latest stable release, re-creates the F
 | `UPSTREAM_DNS_LIST` | `"1.1.1.1 9.9.9.9"` | space-separated |
 | `MATCHBOX_VERSION` | `v0.10.0` | verify current release before flashing |
 | `SSH_PUBKEY_PATH` | `$HOME/.ssh/id_ed25519.pub` | |
+| `TALOS_CONFIG_DIR` | empty | optional path to real `talosctl gen config` output; `configs.local/` is used automatically when present |
 
 ## Troubleshooting
 

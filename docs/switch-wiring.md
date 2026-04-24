@@ -2,14 +2,16 @@
 
 The Pi is a PXE/DHCP server on a single tagged VLAN. Home-LAN access is kept separate on the untagged (native) VLAN, so the Pi reaches the internet for package / Talos-asset downloads and the operator can SSH to it, while PXE traffic never leaks onto the home network.
 
-Example below uses a MikroTik RB5009 with VLAN 1 as the home LAN (untagged/native) and VLAN 10 as the PXE lab. Adapt the concept to any managed switch.
+Example below uses a MikroTik RB5009 with VLAN 1 as the home LAN (untagged/native) and VLAN 10 as the PXE lab. The port layout matches the defaults in `terraform/mikrotik-rb5009`. Adapt the concept to any managed switch.
 
 ## Ports
 
 | Port | Mode | Native / untagged | Tagged | Purpose |
 |---|---|---|---|---|
-| `ether1` | trunk → Pi | VLAN 1 (home) | VLAN 10 | Pi gets both home and lab; `eth0` is home, `eth0.10` is lab |
-| `ether2`…`etherN` | access | VLAN 10 | — | Talos nodes that PXE-boot |
+| `ether1` | uplink → Fritzbox / home LAN | VLAN 1 (home) | — | Upstream internet and home-LAN DHCP |
+| `ether2` | trunk → Pi | VLAN 1 (home) | VLAN 10 | Pi gets both home and lab; `eth0` is home, `eth0.10` is lab |
+| `ether3`…`ether7` | access | VLAN 10 | — | Talos nodes that PXE-boot |
+| `ether8` | access | VLAN 1 (home) | — | optional home-LAN / management port |
 | `etherM` | trunk (uplink) | VLAN 1 | VLAN 10 (if PXE must traverse) | to a second switch |
 | optional | trunk | — | VLAN 20 | Talos-internal traffic between nodes (declared in each node's machine config, not by this repo) |
 

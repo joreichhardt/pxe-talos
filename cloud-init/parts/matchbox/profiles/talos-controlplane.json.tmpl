@@ -6,6 +6,8 @@
     "initrd": ["/assets/talos/__SCHEMATIC__/__VERSION__/initramfs-amd64.xz"],
     "args": [
       "talos.platform=metal",
+      "slab_nomerge",
+      "pti=on",
       "talos.config=http://${PI_LAB_IP}:8080/assets/configs/controlplane.yaml",
       "console=tty0",
       "console=ttyS0"
